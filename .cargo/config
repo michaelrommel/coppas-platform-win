@@ -1,0 +1,7 @@
+[build]
+# this target will be specified manually on the command line
+# when compiling on the windows side
+# target = "x86_64-pc-windows-msvc"
+
+# this is the default target
+target = "x86_64-pc-windows-gnu"

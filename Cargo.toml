@@ -1,0 +1,12 @@
+[package]
+name = "coppas-platform-win"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clipboard-win = "4.2.1"
+clipboard-master = "3.1.2"
+ctrlc = "3.2.0"
+signal-hook = "0.3.10"
