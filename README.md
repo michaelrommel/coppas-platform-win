@@ -55,7 +55,7 @@ based on the original version © Sindre Sorhus
 
 #### On Windows
 
-- install rust via rustup.rs: `curl https://sh.rustup.rs -sSf | sh`
+- install rust via rustup.rs: `https://win.rustup.rs/x86_64`
 - update to nightly: `rustup update; rustup default nightly`
 - add toolchain: `rustup target add x86_64-pc-windows-gnu` or
   `rustup target add x86_64-pc-windows-msvc`

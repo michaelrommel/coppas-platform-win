@@ -96,8 +96,6 @@ fn paste() -> std::io::Result<()> {
 }
 
 fn main() {
-
-    // stderrlog::new().module(module_path!()).verbosity(5).init().unwrap();
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 2 {
