@@ -58,7 +58,7 @@ fn listen() -> Result<(), Error> {
     return Ok(());
 }
 
-fn copy() -> std::io::Result<()> {
+fn copy() -> Result<(), Error> {
     let mut input = String::new();
     match std::io::stdin().read_to_string(&mut input) {
         Ok(_) => {
@@ -71,7 +71,7 @@ fn copy() -> std::io::Result<()> {
     }
 }
 
-fn paste() -> std::io::Result<()> {
+fn paste() -> Result<(), Error> {
     let _clip = Clipboard::new_attempts(10).expect("Has clipboard");
     // check whether a string is available
     if is_format_avail(formats::CF_OEMTEXT) ||
