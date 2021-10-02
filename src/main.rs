@@ -41,11 +41,6 @@ impl ClipboardHandler for Handler {
 }
 
 fn listen() -> Result<(), Error> {
-    // ctrlc::set_handler(move || {
-    //     std::process::exit(0);
-    // })
-    // .expect("Error setting Ctrl-C handler");
-
     // Make sure double CTRL+C and similar kills
     let term_now = Arc::new(AtomicBool::new(false));
     for sig in TERM_SIGNALS {
