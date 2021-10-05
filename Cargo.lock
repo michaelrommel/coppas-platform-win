@@ -67,6 +67,7 @@ dependencies = [
 [[package]]
 name = "clipboard-win"
 version = "4.2.1"
+source = "git+https://github.com/michaelrommel/clipboard-win#3933b5f4e4ac60b786fdb47f0e5d934ab63e8928"
 dependencies = [
  "error-code",
  "image",

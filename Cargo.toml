@@ -12,4 +12,4 @@ signal-hook = "0.3.10"
 image = "0.23.14"
 
 [patch.crates-io]
-clipboard-win = { path = "/home/rommel/software/clipboard-win" }
+clipboard-win = { git = "https://github.com/michaelrommel/clipboard-win" }
