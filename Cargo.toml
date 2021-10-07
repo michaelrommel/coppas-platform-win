@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clipboard-win = "4.2.1"
+clipboard-win = { version = "4.2.1", features = ["image", "std"] }
 clipboard-master = "3.1.2"
 signal-hook = "0.3.10"
 image = "0.23.14"

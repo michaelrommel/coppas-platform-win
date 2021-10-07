@@ -1,6 +1,6 @@
 use clipboard_master::{Master, ClipboardHandler, CallbackResult};
 use clipboard_win::{Clipboard, Getter, formats, set_clipboard};
-use clipboard_win::raw::{format_name, EnumFormats, is_format_avail, get_png, get_dibv5};
+use clipboard_win::raw::{Image, format_name, EnumFormats, is_format_avail, get_png, get_dibv5};
 
 // use image::{load_from_memory, DynamicImage};
 
@@ -103,9 +103,10 @@ fn pasteimg() -> Result<(), Error> {
     let _clip = Clipboard::new_attempts(10).expect("clipboard timed out");
     // note that CF_BITMAP, CF_DIB are auto-converted when requesting CF_DIBV5
     let preferred_formats = [
+        Some("image/svg+xml"),
+        Some("CF_DIBV5"),
         Some("PNG"),
         Some("image/png"),
-        Some("CF_DIBV5"),
         Some("CF_BITMAP"),
     ];
     let mut enmfmts = EnumFormats::new();
@@ -114,7 +115,12 @@ fn pasteimg() -> Result<(), Error> {
     'pref_for: for pref in preferred_formats {
         for avail in &mut enmfmts {
             let name = format_name(avail);
-            // eprintln!("avail format no: {:?} = {:?}", avail, name.as_ref().unwrap());
+            eprintln!(
+                "cmp format no: {:?} = {:?} with {:?}",
+                avail,
+                name.as_ref().unwrap(),
+                pref.as_ref().unwrap()
+            );
             let strname = name.as_ref().map(|s| s.as_str());
             if pref == strname {
                 selected_format = pref;
@@ -128,6 +134,21 @@ fn pasteimg() -> Result<(), Error> {
 
     // different handling of each format may be required...
     match selected_format {
+        Some("image/svg+xml") => {
+            let mut img: Image = Image::new(Some(String::from("image/svg+xml")));
+            let _ = &img.get_from_clipboard();
+            match &img.write_to_buffer(&mut output) {
+                Ok(_) => {
+                    let stdout = std::io::stdout();
+                    let mut handle = stdout.lock();
+                    match handle.write_all(&output) {
+                        Ok(_) => return Ok(()),
+                        Err(err) => panic!("stdout write_all {:?}", err),
+                    }
+                },
+                Err(err) => panic!("write_to_buffer failed {:?}", err),
+            }
+        },
         Some("PNG") => get_png_image(&mut output, selected_format_id),
         Some("image/png") => get_png_image(&mut output, selected_format_id),
         Some("CF_BITMAP") => get_bmp_image(&mut output),
