@@ -1,8 +1,9 @@
 use clipboard_master::{Master, ClipboardHandler, CallbackResult};
 use clipboard_win::{Clipboard, Getter, formats, set_clipboard};
-use clipboard_win::raw::{Image, format_name, EnumFormats, is_format_avail, get_png, get_dibv5};
+use clipboard_win::raw::{is_format_avail};
+use clipboard_win::raw::clipboardimage::{ClipboardImage, get_png, get_dibv5};
 
-// use image::{load_from_memory, DynamicImage};
+// use image::{ImageFormat};
 
 use std::io::{Read, Write, Error};
 use std::env;
@@ -75,6 +76,15 @@ fn copy() -> Result<(), Error> {
     }
 }
 
+fn write_stdout(out: Vec<u8>) -> Result<(), Error> {
+    let stdout = std::io::stdout();
+    let mut handle = stdout.lock();
+    match handle.write_all(&out) {
+        Ok(_) => return Ok(()),
+        Err(err) => panic!("stdout write_all failed: {:?}", err),
+    }
+}
+
 fn paste() -> Result<(), Error> {
     let _clip = Clipboard::new_attempts(10).expect("clipboard timed out");
     // check whether a string is available
@@ -85,12 +95,7 @@ fn paste() -> Result<(), Error> {
         let mut output = String::new();
         match formats::Unicode.read_clipboard(&mut output) {
             Ok(_) => {
-                let stdout = std::io::stdout();
-                let mut handle = stdout.lock();
-                match handle.write_all(&output.into_bytes()) {
-                    Ok(_) => return Ok(()),
-                    Err(err) => panic!("stdout write_all failed: {:?}", err),
-                }
+                return write_stdout(output.into_bytes());
             },
             Err(err) => panic!("read_clipboard failed: {:?}", err)
         };
@@ -102,49 +107,21 @@ fn paste() -> Result<(), Error> {
 fn pasteimg() -> Result<(), Error> {
     let _clip = Clipboard::new_attempts(10).expect("clipboard timed out");
     // note that CF_BITMAP, CF_DIB are auto-converted when requesting CF_DIBV5
-    let preferred_formats = [
-        Some("image/svg+xml"),
-        Some("CF_DIBV5"),
-        Some("PNG"),
-        Some("image/png"),
-        Some("CF_BITMAP"),
-    ];
-    let mut enmfmts = EnumFormats::new();
-    let mut selected_format_id : u32 = 0;
-    let mut selected_format = None;
-    'pref_for: for pref in preferred_formats {
-        for avail in &mut enmfmts {
-            let name = format_name(avail);
-            eprintln!(
-                "cmp format no: {:?} = {:?} with {:?}",
-                avail,
-                name.as_ref().unwrap(),
-                pref.as_ref().unwrap()
-            );
-            let strname = name.as_ref().map(|s| s.as_str());
-            if pref == strname {
-                selected_format = pref;
-                selected_format_id = avail;
-                break 'pref_for;
-            }
-        };
-    };
+    let _preferred_formats: [&str; 7] = [ "Svg", "WebP", "Ico", "Png", "Bmp", "Jpeg", "Gif"];
+
+    let selected_format = Some("image/svg+xml");
+    let selected_format_id = 1234;
 
     let mut output = Vec::new();
-
     // different handling of each format may be required...
     match selected_format {
         Some("image/svg+xml") => {
-            let mut img: Image = Image::new(Some(String::from("image/svg+xml")));
-            let _ = &img.get_from_clipboard();
-            match &img.write_to_buffer(&mut output) {
-                Ok(_) => {
-                    let stdout = std::io::stdout();
-                    let mut handle = stdout.lock();
-                    match handle.write_all(&output) {
-                        Ok(_) => return Ok(()),
-                        Err(err) => panic!("stdout write_all {:?}", err),
-                    }
+            let img: ClipboardImage = ClipboardImage::new("Svg");
+            let img: ClipboardImage = img.get_from_clipboard().unwrap();
+            match img.write_to_buffer(&mut output) {
+                Ok(no_of_bytes) => {
+                    eprintln!("Wrote {:?} bytes to buffer", no_of_bytes);
+                    return write_stdout(output);
                 },
                 Err(err) => panic!("write_to_buffer failed {:?}", err),
             }
