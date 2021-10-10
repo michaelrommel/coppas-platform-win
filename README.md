@@ -35,9 +35,11 @@ Usage:
   echo Hello | coppas-platform-win.exe --copy
   coppas-platform-win.exe --paste
 
-    --copy   - stores stdin into clipboard
-    --paste  - pastes clipboard content to stdout
-    --listen - writes CBCHANGED to stdout whenever the clipboard changes
+    --copy       - stores stdin into clipboard
+    --paste      - pastes clipboard content to stdout
+    --paste-img  - pastes images from clipboard to stdout
+                   (preferred formats: png, bmp)
+    --listen     - writes CBCHANGED to stdout whenever the clipboard changes
 
 MIT © Michael Rommel
 based on the original version © Sindre Sorhus
