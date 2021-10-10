@@ -67,6 +67,7 @@ dependencies = [
 [[package]]
 name = "clipboard-win"
 version = "4.2.1"
+source = "git+https://github.com/michaelrommel/clipboard-win?branch=image#43a3ace157cdb9025401c7204430f9d1c61fa04a"
 dependencies = [
  "error-code",
  "image",
@@ -82,7 +83,7 @@ checksum = "3d7b894f5411737b7867f4827955924d7c254fc9f4d91a6aad6b097804b1018b"
 
 [[package]]
 name = "coppas-platform-win"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "clipboard-master",
  "clipboard-win",
