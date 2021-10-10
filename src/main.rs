@@ -22,7 +22,7 @@ fn help() {
     println!("    --copy       - stores stdin into clipboard");
     println!("    --paste      - pastes clipboard content to stdout");
     println!("    --paste-img  - pastes images from clipboard to stdout");
-    println!("                   (preferred formats: png, bmp)");
+    println!("                   (preferred formats: Svg, Ico, Png, Bmp, Jpeg, Gif)");
     println!("    --listen     - writes CBCHANGED to stdout whenever the clipboard changes");
     println!("");
     println!("MIT © Michael Rommel");

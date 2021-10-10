@@ -37,8 +37,8 @@ Usage:
 
     --copy       - stores stdin into clipboard
     --paste      - pastes clipboard content to stdout
-    --paste-img  - pastes images from clipboard to stdout
-                   (preferred formats: png, bmp)
+    --paste-img  - pastes images from cplipboard to stdout
+                   (preferred formats: Svg, Ico, Png, Bmp, Jpeg, Gif)
     --listen     - writes CBCHANGED to stdout whenever the clipboard changes
 
 MIT © Michael Rommel
