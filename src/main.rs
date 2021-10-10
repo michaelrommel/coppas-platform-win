@@ -1,9 +1,7 @@
 use clipboard_master::{Master, ClipboardHandler, CallbackResult};
 use clipboard_win::{Clipboard, Getter, formats, set_clipboard};
 use clipboard_win::raw::{is_format_avail};
-use clipboard_win::raw::clipboardimage::{ClipboardImage, get_png, get_dibv5};
-
-// use image::{ImageFormat};
+use clipboard_win::raw::clipboardimage::{ClipboardImage};
 
 use std::io::{Read, Write, Error};
 use std::env;
@@ -107,78 +105,34 @@ fn paste() -> Result<(), Error> {
 fn pasteimg() -> Result<(), Error> {
     let _clip = Clipboard::new_attempts(10).expect("clipboard timed out");
     // note that CF_BITMAP, CF_DIB are auto-converted when requesting CF_DIBV5
-    let _preferred_formats: [&str; 7] = [ "Svg", "WebP", "Ico", "Png", "Bmp", "Jpeg", "Gif"];
+    let preferred_formats: &[&str] = &[
+        "Svg", "Ico", "Png", "Bmp", "Jpeg", "Gif"
+        // "Jpeg"
+    ];
 
-    let selected_format = Some("image/svg+xml");
-    let selected_format_id = 1234;
+    let img: ClipboardImage = ClipboardImage::new(preferred_formats);
+
+    match img {
+        ClipboardImage::ImageString(ref id, ref name, ref _store) => {
+            eprintln!("Created string based image: {:?}: {:?}", id, name);
+        },
+        ClipboardImage::ImageBinary(ref format, ref _store) => {
+            eprintln!("Created binary image: {:?}", format);
+        },
+        ClipboardImage::NotFound => {
+            eprintln!("No matching image type found on clipboard!");
+            return Ok(());
+        }
+    }
 
     let mut output = Vec::new();
-    // different handling of each format may be required...
-    match selected_format {
-        Some("image/svg+xml") => {
-            let img: ClipboardImage = ClipboardImage::new("Svg");
-            let img: ClipboardImage = img.get_from_clipboard().unwrap();
-            match img.write_to_buffer(&mut output) {
-                Ok(no_of_bytes) => {
-                    eprintln!("Wrote {:?} bytes to buffer", no_of_bytes);
-                    return write_stdout(output);
-                },
-                Err(err) => panic!("write_to_buffer failed {:?}", err),
-            }
+    match img.write_to_buffer(&mut output) {
+        Ok(no_of_bytes) => {
+            eprintln!("Wrote {:?} bytes to buffer", no_of_bytes);
+            return write_stdout(output);
         },
-        Some("PNG") => get_png_image(&mut output, selected_format_id),
-        Some("image/png") => get_png_image(&mut output, selected_format_id),
-        Some("CF_BITMAP") => get_bmp_image(&mut output),
-        Some("CF_DIBV5") => get_dibv5_image(&mut output),
-        Some(_) => Ok(()),
-        // haven't got any of the preferred formats, quit silently
-        None => Ok(())
+        Err(err) => panic!("write_to_buffer failed {:?}", err),
     }
-}
-
-fn get_bmp_image (output: &mut Vec<u8>) -> Result<(), Error> {
-    // eprintln!("get_bmp_image()");
-    match formats::Bitmap.read_clipboard(output) {
-        Ok(_) => {
-            let stdout = std::io::stdout();
-            let mut handle = stdout.lock();
-            match handle.write_all(&output) {
-                Ok(_) => return Ok(()),
-                Err(err) => panic!("stdout write_all {:?}", err),
-            }
-        },
-        Err(err) => panic!("read image: {:?}", err)
-    };
-}
-
-fn get_dibv5_image (output: &mut Vec<u8>) -> Result<(), Error> {
-    // eprintln!("get_dibv5_image()");
-    match get_dibv5(output) {
-        Ok(_) => {
-            let stdout = std::io::stdout();
-            let mut handle = stdout.lock();
-            match handle.write_all(&output) {
-                Ok(_) => return Ok(()),
-                Err(err) => panic!("stdout write_all {:?}", err),
-            }
-        },
-        Err(err) => panic!("read image: {:?}", err)
-    };
-}
-
-fn get_png_image (output: &mut Vec<u8>, id: u32) -> Result<(), Error> {
-    // eprintln!("get_png_image()");
-    match get_png(output, id) {
-        Ok(_) => {
-            let stdout = std::io::stdout();
-            let mut handle = stdout.lock();
-            match handle.write_all(&output) {
-                Ok(_) => return Ok(()),
-                Err(err) => panic!("stdout write_all {:?}", err),
-            }
-        },
-        Err(err) => panic!("read image: {:?}", err)
-    };
 }
 
 // maybe later extend this to directly save to a file:
