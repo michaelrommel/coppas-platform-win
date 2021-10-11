@@ -149,13 +149,21 @@ fn main() {
                 .long("copy")
                 .short('c')
                 .display_order(1)
-                .about("sets copy mode"))
+                .about("sets copy mode.")
+                .long_about("Copies input from stdin or from a file to the clipboard.
+Usage: echo 'Some String' | coppas-platform-win.exe --copy
+       cat code.mjs | coppas-platform-win.exe --copy
+       coppas-platform-win.exe --copy --in icon.png --sourceform Png"))
         .arg(Arg::new("paste")
                 .takes_value(false)
                 .long("paste")
                 .short('p')
                 .display_order(2)
-                .about("sets paste mode"))
+                .about("sets paste mode")
+                .long_about("Pastes information on the clipboard to stdout or a file.
+Usage: coppas-platform-win.exe --paste
+       coppas-platform-win.exe --paste --out icon.png
+       coppas-platform-win.exe --paste --sourceform Bmp --out icon.png --destform Png"))
         .arg(Arg::new("listen")
                 .takes_value(false)
                 .long("listen")
@@ -174,13 +182,14 @@ fn main() {
         .arg(Arg::new("sourceform")
                 .takes_value(true)
                 .long("sourceform")
+                .short('s')
                 .possible_values(&["*", "Svg", "Ico", "Png", "Bmp", "Jpeg", "Gif"])
                 .about("specifies the source image format (optional)")
-                .long_about("In copy mode, this designates the source format of the input file 
-which will always be placed as PNG onto the clipboard. In paste mode,
-this designates the format that will be looked for on the clipboard.
-If * is given, the internal list of preferred formats (stated hereafter)
-is iterated over until a matching format is found. The preferred formats
+                .long_about("In copy mode, this designates the source format of the input
+file which will always be placed as PNG onto the clipboard. In paste
+mode, this designates the format that will be looked for on the
+clipboard. If * is given, the internal list of preferred formats is
+iterated over until a matching format is found. The preferred formats
 are:"))
         .arg(Arg::new("outfile")
                 .takes_value(true)
@@ -192,8 +201,8 @@ are:"))
                 .long("destform")
                 .short('d')
                 .about("specifies the destination image format (optional)")
-                .long_about("In paste mode, this designates the format that 
-will be written to the file or stdout."))
+                .long_about("In paste mode, this designates the format that will be written to
+the file or stdout."))
         .get_matches();
 
     if cli.occurrences_of("listen") > 0 {
