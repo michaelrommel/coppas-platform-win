@@ -10,6 +10,7 @@ clipboard-win = { version = "4.2.1", features = ["image", "std"] }
 clipboard-master = "3.1.2"
 signal-hook = "0.3.10"
 image = "0.23.14"
+clap = "3.0.0-beta.4"
 
 [patch.crates-io]
 # clipboard-win = { path = "/home/rommel/software/clipboard-win" }

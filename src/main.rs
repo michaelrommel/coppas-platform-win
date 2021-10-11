@@ -3,31 +3,15 @@ use clipboard_win::{Clipboard, Getter, formats, set_clipboard};
 use clipboard_win::raw::{is_format_avail};
 use clipboard_win::raw::clipboardimage::{ClipboardImage};
 
+use clap::{App, Arg, ArgGroup};
+
 use std::io::{Read, Write, Error};
-use std::env;
 
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 
 use signal_hook::consts::TERM_SIGNALS;
 use signal_hook::flag;
-
-fn help() {
-    println!("coppas-platform-win.exe – Access the Windows clipboard (copy/paste)");
-    println!("");
-    println!("Usage:");
-    println!("  echo Hello | coppas-platform-win.exe --copy");
-    println!("  coppas-platform-win.exe --paste");
-    println!("");
-    println!("    --copy       - stores stdin into clipboard");
-    println!("    --paste      - pastes clipboard content to stdout");
-    println!("    --paste-img  - pastes images from clipboard to stdout");
-    println!("                   (preferred formats: Svg, Ico, Png, Bmp, Jpeg, Gif)");
-    println!("    --listen     - writes CBCHANGED to stdout whenever the clipboard changes");
-    println!("");
-    println!("MIT © Michael Rommel");
-    println!("based on the original version © Sindre Sorhus");
-}
 
 struct Handler;
 
@@ -83,32 +67,42 @@ fn write_stdout(out: Vec<u8>) -> Result<(), Error> {
     }
 }
 
-fn paste() -> Result<(), Error> {
-    let _clip = Clipboard::new_attempts(10).expect("clipboard timed out");
-    // check whether a string is available
-    if is_format_avail(formats::CF_OEMTEXT) ||
-        is_format_avail(formats::CF_TEXT) ||
-        is_format_avail(formats::CF_UNICODETEXT) {
-        // get it
-        let mut output = String::new();
-        match formats::Unicode.read_clipboard(&mut output) {
-            Ok(_) => {
-                return write_stdout(output.into_bytes());
-            },
-            Err(err) => panic!("read_clipboard failed: {:?}", err)
-        };
-    } else {
-        return Ok(());
-    };
+fn paste(sourceform: Option<&str>) -> Result<(), Error> {
+    match sourceform {
+        Some(format) => pasteimg(format),
+        None => {
+            let _clip = Clipboard::new_attempts(10).expect("clipboard timed out");
+            // check whether a string is available
+            if is_format_avail(formats::CF_OEMTEXT) ||
+                is_format_avail(formats::CF_TEXT) ||
+                is_format_avail(formats::CF_UNICODETEXT) {
+                // get it
+                let mut output = String::new();
+                match formats::Unicode.read_clipboard(&mut output) {
+                    Ok(_) => {
+                        return write_stdout(output.into_bytes());
+                    },
+                    Err(err) => panic!("read_clipboard failed: {:?}", err)
+                };
+            } else {
+                return Ok(());
+            };
+        }
+    }
 }
 
-fn pasteimg() -> Result<(), Error> {
+fn pasteimg(sourceform: &str) -> Result<(), Error> {
     let _clip = Clipboard::new_attempts(10).expect("clipboard timed out");
     // note that CF_BITMAP, CF_DIB are auto-converted when requesting CF_DIBV5
-    let preferred_formats: &[&str] = &[
-        "Svg", "Ico", "Png", "Bmp", "Jpeg", "Gif"
-        // "Jpeg"
-    ];
+    let preferred_formats: &[&str];
+    let sf = [sourceform];
+    if sourceform != "*" {
+        preferred_formats = &sf;
+    } else {
+        preferred_formats = &[
+            "Svg", "Ico", "Png", "Bmp", "Jpeg", "Gif"
+        ];
+    }
 
     let img: ClipboardImage = ClipboardImage::new(preferred_formats);
 
@@ -146,21 +140,73 @@ fn pasteimg() -> Result<(), Error> {
 // data:[<MIME-Typ>][;charset=<Zeichensatz>][;base64],<Daten>
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
+    let cli = App::new("coppas-platform-win")
+        .author("Michael Rommel <rommel@layer-7.net>")
+        .about("Copies into and pastes from the clipboard")
+        .version("v0.2")
+        .arg(Arg::new("copy")
+                .takes_value(false)
+                .long("copy")
+                .short('c')
+                .display_order(1)
+                .about("sets copy mode"))
+        .arg(Arg::new("paste")
+                .takes_value(false)
+                .long("paste")
+                .short('p')
+                .display_order(2)
+                .about("sets paste mode"))
+        .arg(Arg::new("listen")
+                .takes_value(false)
+                .long("listen")
+                .short('l')
+                .display_order(3)
+                .about("sets listen mode"))
+        .group(ArgGroup::new("mode")
+                .args(&["copy", "paste", "listen"])
+                .required(true))
+        .arg(Arg::new("infile")
+                .takes_value(true)
+                .long("in")
+                .short('i')
+                .conflicts_with_all(&["outfile", "destform"])
+                .about("name of the input file (optional)"))
+        .arg(Arg::new("sourceform")
+                .takes_value(true)
+                .long("sourceform")
+                .possible_values(&["*", "Svg", "Ico", "Png", "Bmp", "Jpeg", "Gif"])
+                .about("specifies the source image format (optional)")
+                .long_about("In copy mode, this designates the source format of the input file 
+which will always be placed as PNG onto the clipboard. In paste mode,
+this designates the format that will be looked for on the clipboard.
+If * is given, the internal list of preferred formats (stated hereafter)
+is iterated over until a matching format is found. The preferred formats
+are:"))
+        .arg(Arg::new("outfile")
+                .takes_value(true)
+                .long("out")
+                .short('o')
+                .about("name of the output file (optional)"))
+        .arg(Arg::new("destform")
+                .takes_value(true)
+                .long("destform")
+                .short('d')
+                .about("specifies the destination image format (optional)")
+                .long_about("In paste mode, this designates the format that 
+will be written to the file or stdout."))
+        .get_matches();
 
-    if args.len() < 2 {
-        println!("You should specify the operations mode. See `--help` for usage examples.");
-        return;
+    if cli.occurrences_of("listen") > 0 {
+        // listen to clipboard changes, write message to stdout on change
+        listen().expect("Could not listen to clipboard changes.");
     }
-
-    let cmd = &args[1];
-
-    match &cmd[..] {
-        "--copy" => copy().expect("Error: Could not copy to clipboard"),
-        // "--copy-img" => copyimg().expect("Error: Could not copy to clipboard"),
-        "--paste" => paste().expect("Error: Could not paste from clipboard"),
-        "--paste-img" => pasteimg().expect("Error: Could not paste from clipboard"),
-        "--listen" => listen().expect("Error: could not listen to change events"),
-        _ => help(),
+    if cli.occurrences_of("copy") > 0 {
+        // copy into clipboard, for now without images...
+        copy().expect("Could not copy into clipboard.");
+    }
+    if cli.occurrences_of("paste") > 0 {
+        // pastes from clipboard, for now with selection of clipboard 
+        // format to select
+        paste(cli.value_of("sourceform")).expect("Could not paste from clipboard.");
     }
 }
